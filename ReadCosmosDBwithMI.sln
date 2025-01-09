@@ -3,7 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35222.181
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadCosmosDBwithMI", "ReadCosmosDBwithMI.csproj", "{C0D80E98-54D5-4F72-B301-890325641D7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReadCosmosDBwithMI", "ReadCosmosDBwithMI.csproj", "{C0D80E98-54D5-4F72-B301-890325641D7B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{62F62694-1E18-4C6E-A60D-F5D9D81041FA}"
+	ProjectSection(SolutionItems) = preProject
+		readdatabases.cs = readdatabases.cs
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
