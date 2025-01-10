@@ -1,10 +1,8 @@
 ﻿using System.Net;
-using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Cosmos;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Azure.Identity;
 
@@ -14,12 +12,11 @@ public static class GetDocumentById
     private static CosmosClient cosmosClient = new CosmosClient(endpoint, new DefaultAzureCredential());
     private static Database database = cosmosClient.GetDatabase("ToDoList");
     private static Container container = database.GetContainer("Items");
-    private static string partitionKey = "household";
 
     [Function("GetDocumentById")]
     public static async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "documents/{id}")] HttpRequestData req,
-        string id,
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "documents/{partitionKey}/{id}")] HttpRequestData req,
+        string partitionKey, string id,
         FunctionContext executionContext)
     {
         var logger = executionContext.GetLogger("GetDocumentById");
