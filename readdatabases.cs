@@ -1,57 +1,55 @@
-﻿using Microsoft.Azure.Functions.Worker;
+﻿using System.Net;
+using System.Threading.Tasks;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Azure.Identity;
 
-namespace ReadCosmosDBwithMI
+public static class GetDocumentById
 {
-    public class readdatabases
+    private static string endpoint = Environment.GetEnvironmentVariable("COSMOS_ENDPOINT", EnvironmentVariableTarget.Process);
+    private static CosmosClient cosmosClient = new CosmosClient(endpoint, new DefaultAzureCredential());
+    private static Database database = cosmosClient.GetDatabase("ToDoList");
+    private static Container container = database.GetContainer("Items");
+    private static string partitionKey = "household";
+
+    [Function("GetDocumentById")]
+    public static async Task<HttpResponseData> Run(
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "documents/{id}")] HttpRequestData req,
+        string id,
+        FunctionContext executionContext)
     {
-        private readonly ILogger<readdatabases> _logger;
+        var logger = executionContext.GetLogger("GetDocumentById");
+        logger.LogInformation($"Retrieving document with ID: {id}");
 
-        public readdatabases(ILogger<readdatabases> logger)
+
+        var response = req.CreateResponse(HttpStatusCode.OK);
+
+        try
         {
-            _logger = logger;
+            ItemResponse<dynamic> documentResponse = await container.ReadItemAsync<dynamic>(id, new PartitionKey(partitionKey));
+            JObject document = documentResponse.Resource as JObject;
+
+            if (document != null)
+            {
+                response.Headers.Add("Content-Type", "application/json");
+                await response.WriteStringAsync(document.ToString());
+            }
+            else
+            {
+                response = req.CreateResponse(HttpStatusCode.NotFound);
+                await response.WriteStringAsync($"Document with ID {id} not found.");
+            }
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            response = req.CreateResponse(HttpStatusCode.NotFound);
+            await response.WriteStringAsync($"Document with ID {id} not found.");
         }
 
-        [Function("readdatabases")]
-        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequest req)
-        {
-            _logger.LogTrace("Start function");
-
-            string endpoint = Environment.GetEnvironmentVariable("COSMOS_ENDPOINT", EnvironmentVariableTarget.Process);
-            if (string.IsNullOrEmpty(endpoint))
-            {
-                _logger.LogError("COSMOS_ENDPOINT environment variable is not set.");
-                return new BadRequestObjectResult("COSMOS_ENDPOINT environment variable is not set.");
-            }
-
-            CosmosClient client = new CosmosClient(endpoint, new DefaultAzureCredential());
-
-            using FeedIterator<DatabaseProperties> iterator = client.GetDatabaseQueryIterator<DatabaseProperties>();
-
-            List<(string name, string uri)> databases = new();
-            while (iterator.HasMoreResults)
-            {
-                FeedResponse<DatabaseProperties> response = await iterator.ReadNextAsync();
-                _logger.LogTrace($"Number of databases retrieved: {response.Count}");
-
-                foreach (DatabaseProperties database in response)
-                {
-                    _logger.LogTrace($"[Database Found]\t{database.Id}");
-                    databases.Add((database.Id, database.SelfLink));
-                }
-            }
-
-            if (databases.Count == 0)
-            {
-                _logger.LogWarning("No databases found.");
-            }
-
-            return new OkObjectResult(databases);
-        }
+        return response;
     }
 }
