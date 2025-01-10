@@ -15,9 +15,9 @@ param dataActions array = [
 ]
 
 @description('Object ID of the AAD identity (in this case the local developer). Must be a GUID.')
-param localDeveloperPrincipalId string = '46053924-fcc2-4c7a-94ae-daba6d1e5e7b'
+param localDeveloperPrincipalId string = '<your-local-developer-principalId>'
 
-param functionAppManagedIdPrincipalId string = '8a5f0df2-db03-4439-9146-b4e8beed0e89'
+param functionAppManagedIdPrincipalId string = '<your-functionApp-managedId-principalId'
 
 var roleDefinitionId = guid('sql-role-definition-', localDeveloperPrincipalId, account.id)
 
